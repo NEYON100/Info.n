@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Information Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #add8e6; /* Light blue background */
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .navbar {
+            width: 100%;
+            background-color: #333;
+            overflow: hidden;
+        }
+        .navbar a {
+            float: left;
+            display: block;
+            color: white;
+            text-align: center;
+            padding: 14px 20px;
+            text-decoration: none;
+        }
+        .navbar a:hover {
+            background-color: #ddd;
+            color: black;
+        }
+        .container {
+            background-color: #13294b; /* Dark blue container */
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 800px; /* Increased width for better organization */
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .info-box {
+            background-color: #ffffff; /* White spots inside dark blue container */
+            padding: 20px;
+            margin: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #ffffff; /* White color for headings */
+            text-align: center;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            color: #ffffff; /* White color for labels */
+        }
+        input[type="text"], input[type="email"], input[type="password"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+        #savedInfo {
+            display: none;
+        }
+        #pinContainer {
+            display: none;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="#" onclick="showForm()">Home</a>
+        <a href="#" onclick="showPinPrompt()">See Saved Information</a>
+    </div>
+
+    <div class="container" id="formContainer">
+        <img src="https://www.example.com/logo.png" alt="Logo"> <!-- Replace with your image URL -->
+        <h1>Personal Information Form</h1>
+        <form id="infoForm">
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" required>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+            <button type="submit">Save</button>
+        </form>
+    </div>
+
+    <div class="container" id="savedInfo">
+        <h1>Saved Information</h1>
+        <div id="infoBoxes"></div>
+    </div>
+
+    <div class="container" id="pinContainer">
+        <h1>Enter PIN</h1>
+        <input type="password" id="pin" placeholder="Enter PIN">
+        <button onclick="verifyPin()">Submit</button>
+        <p id="pinMessage" style="color: red;"></p>
+    </div>
+
+    <script>
+        let pinAttempts = 0;
+        let cooldown = false;
+        let serial = 1; // Serial number for saved information
+
+        document.getElementById('infoForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+
+            // Check if the combination of name and email already exists
+            if (isDuplicate(name, email)) {
+                alert('This combination of name and email already exists in the saved list.');
+                return;
+            }
+
+            const data = {
+                name: name,
+                email: email
+            };
+
+            // Save the information to local storage
+            localStorage.setItem('personalInfo_' + serial, JSON.stringify(data));
+            serial++;
+
+            // Reset serial number to 1 after 1000 inputs
+            if (serial > 1000) {
+                serial = 1;
+            }
+
+            // Update saved information display
+            updateSavedInfo();
+
+            // Clear the form
+            document.getElementById('infoForm').reset();
+        });
+
+        function isDuplicate(name, email) {
+            for (let i = 1; i < serial; i++) {
+                const savedData = localStorage.getItem('personalInfo_' + i);
+                if (savedData) {
+                    const info = JSON.parse(savedData);
+                    if (info.name === name && info.email === email) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function updateSavedInfo() {
+            const savedInfoContainer = document.getElementById('infoBoxes');
+            savedInfoContainer.innerHTML = ''; // Clear existing content
+
+            for (let i = 1; i < serial; i++) {
+                const savedData = localStorage.getItem('personalInfo_' + i);
+                if (savedData) {
+                    const info = JSON.parse(savedData);
+                    const infoBox = document.createElement('div');
+                    infoBox.classList.add('info-box');
+                    infoBox.innerHTML = `
+                        <h2>Entry ${i}</h2>
+                        <p><strong>Name:</strong> ${info.name}</p>
+                        <p><strong>Email:</strong> ${info.email}</p>
+                    `;
+                    savedInfoContainer.appendChild(infoBox);
+                }
+            }
+        }
+
+        function showForm() {
+            document.getElementById('formContainer').style.display = 'block';
+            document.getElementById('savedInfo').style.display = 'none';
+            document.getElementById('pinContainer').style.display = 'none';
+        }
+
+        function showPinPrompt() {
+            document.getElementById('formContainer').style.display = 'none';
+            document.getElementById('savedInfo').style.display = 'none';
+            document.getElementById('pinContainer').style.display = 'block';
+        }
+
+        function verifyPin() {
+            if (cooldown) {
+                document.getElementById('pinMessage').textContent = 'Too many attempts. Please wait a minute.';
+                return;
+            }
+
+            const pin = document.getElementById('pin').value;
+            if (pin === '1212') {
+                pinAttempts = 0; // Reset attempts on successful login
+                document.getElementById('pin').value = ''; // Clear the pin input box
+                showSavedInfo();
+            } else {
+                pinAttempts++;
+                document.getElementById('pin').value = ''; // Clear the pin input box
+                document.getElementById('pinMessage').textContent = `Incorrect PIN. Attempt ${pinAttempts}/5.`;
+
+                if (pinAttempts >= 5) {
+                    cooldown = true;
+                    setTimeout(() => {
+                        cooldown = false;
+                        pinAttempts = 0;
+                        document.getElementById('pinMessage').textContent = '';
+                    }, 60000); // 1 minute cooldown
+                }
+            }
+        }
+
+        function showSavedInfo() {
+            updateSavedInfo();
+            document.getElementById('formContainer').style.display = 'none';
+            document.getElementById('savedInfo').style.display = 'block';
+            document.getElementById('pinContainer').style.display = 'none';
+        }
+
+        // Show form by default
+        showForm();
+    </script>
+</body>
+</html>
